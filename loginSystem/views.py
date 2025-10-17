@@ -114,13 +114,17 @@ def verifyLogin(request):
 
                 request.session['userID'] = admin.pk
 
-                ipAddr = request.META.get('REMOTE_ADDR')
+                ipAddr = request.META.get('HTTP_CF_CONNECTING_IP')
+                if ipAddr is None:
+                    ipAddr = request.META.get('REMOTE_ADDR')
 
                 if ipAddr.find(':') > -1:
                     ipAddr = ipAddr.split(':')[:3]
-                    request.session['ipAddr'] = ''.join(ipAddr)
+                    request.session['ipAddr'] = ipAddr
                 else:
-                    request.session['ipAddr'] = request.META.get('REMOTE_ADDR')
+                    request.session['ipAddr'] = request.META.get('HTTP_CF_CONNECTING_IP')
+                    if request.session['ipAddr'] is None:
+                        request.session['ipAddr'] = request.META.get('REMOTE_ADDR')
 
                 request.session.set_expiry(43200)
                 data = {'userID': admin.pk, 'loginStatus': 1, 'error_message': "None"}
@@ -129,7 +133,7 @@ def verifyLogin(request):
                 return response
 
             else:
-                data = {'userID': 0, 'loginStatus': 0, 'error_message': "wrong-password"}
+                data = {'userID': 0, 'loginStatus': 0, 'error_message': "login failed."}
                 json_data = json.dumps(data)
                 response.write(json_data)
                 return response
